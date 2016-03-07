@@ -1,6 +1,7 @@
 # CheeseknifeT4Template
 
 レイアウトのxmlファイルからCheeseknife用のコードの生成を行うT4テンプレート。
+
 partialクラスとしてCheeseknife用のコードを出力します。
 
 # 使い方
@@ -16,7 +17,7 @@ var layoutFile = Host.ResolvePath("./Resources/Layout/Main.axml");
 プロジェクトを作成した時に生成されるMain.axmlを指定すると、以下のように出力されます。
 
 - レイアウトファイル
-```
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
@@ -31,7 +32,7 @@ var layoutFile = Host.ResolvePath("./Resources/Layout/Main.axml");
 ```
 
 - 変換結果(MainActivity.designer.cs)
-```
+```csharp
 using Android.Views;
 using Android.Widget;
 using Com.Lilarcor.Cheeseknife;
@@ -49,7 +50,7 @@ namespace ChesseknifeT4Template
 # 備考
 - 変数名はandroid:idをlower camelに変換する
   - 変数名の出力ルールを変更する場合は51行目を変更する
-```
+```csharp
 private <#= className #> <#= ToLowerCamel(id) #>;
 
 // UpperCamelにしたい場合は
