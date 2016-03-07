@@ -1,0 +1,82 @@
+﻿<#@ template language="C#" hostspecific="true" #>
+<#@ assembly name="System.Xml.Linq" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Xml.Linq" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+// レイアウトファイルをこのテンプレートからの相対パスで指定
+var layoutFile = Host.ResolvePath("./Resources/Layout/Main.axml");
+
+// 出力するnamespace
+var outputNamespaceName = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData("NamespaceHint").ToString();
+
+// 出力するクラス名
+var outputClassName = Path.GetFileName(Host.TemplateFile).Replace(".designer.tt", "");
+
+// Supportライブラリのネームスペースを登録
+var supportLibraryNamespaces = new Dictionary<string, string>
+{
+	{"android.support.v4.view", "Android.Support.V4.View"},
+	{"android.support.v4.widget", "Android.Support.V4.Widget"},
+	{"android.support.v7.widget", "Android.Support.V7.Widget"}
+};
+
+var idAttribute= "{http://schemas.android.com/apk/res/android}id";
+var doc = XDocument.Load(layoutFile);
+var elements = doc.Descendants().Where(x => x.Attribute(idAttribute) != null);
+#>
+using Android.Views;
+using Android.Widget;
+using Com.Lilarcor.Cheeseknife;
+
+namespace <#= outputNamespaceName #>
+{
+    public partial class <#= outputClassName #>
+    {
+<#
+PushIndent("    ");    
+foreach(var element in elements)
+{
+ 	var classInfo = SplitToNamespaceAndClassName(element.Name.ToString());
+
+ 	var namespaceName = supportLibraryNamespaces.ContainsKey(classInfo.Item1) ? 
+ 	                        supportLibraryNamespaces[classInfo.Item1] : classInfo.Item1;
+
+ 	var className = namespaceName == string.Empty ? classInfo.Item2 : namespaceName + "." + classInfo.Item2;
+
+ 	var id = element.Attribute(idAttribute).Value.Replace("@+id/", "");
+#>
+    [InjectView(Resource.Id.<#= id #>)]
+    private <#= className #> <#= ToLowerCamel(id) #>;
+<#
+}
+PopIndent();
+#>
+    }
+}
+<#+ 
+Tuple<string, string> SplitToNamespaceAndClassName(string str)
+{
+    var lastDotIndex = str.LastIndexOf('.');
+
+    return lastDotIndex == -1 ? Tuple.Create<string, string>(string.Empty, str) :
+                                Tuple.Create<string, string>(str.Substring(0, lastDotIndex), str.Substring(lastDotIndex+1));
+}
+
+string ToUpperCamel(string str)
+{
+	return string.Join(
+		string.Empty,
+		str.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries)
+           .Select(x => x.Substring(0, 1).ToUpper() + (x.Length == 1 ? string.Empty : x.Substring(1)))
+    );
+}
+
+string ToLowerCamel(string str)
+{
+	var upperCamel = ToUpperCamel(str);
+
+	return upperCamel.Substring(0, 1).ToLower() + upperCamel.Substring(1);
+}
+#>
